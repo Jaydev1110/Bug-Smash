@@ -1,4 +1,4 @@
-# API KEY - AIzaSyDQpr_GRBee7jU2_LcS-WadPR8Z8hhF7zg
+#AIzaSyDQpr_GRBee7jU2_LcS-WadPR8Z8hhF7zg
 
 # Import necessary libraries
 import google.generativeai as genai  # Google's Gemini AI SDK
@@ -6,7 +6,7 @@ import pyttsx3  # Text-to-Speech conversion
 import time  # For synchronizing printing speed with speech
 
 # Configure Gemini AI with API key (Replace with your actual key)
-genai.configure(api_key="AIzaSyDQpr_GRBee7jU2_LcS-WadPR8Z8hhF7zg")
+genai.configure(api_key="Your_API_KEY")
 
 def get_gemini_response(prompt):
     """
