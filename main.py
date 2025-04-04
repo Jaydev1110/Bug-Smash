@@ -1,7 +1,8 @@
 #AIzaSyDQpr_GRBee7jU2_LcS-WadPR8Z8hhF7zg
 
 # hii i am naiteek, and i just contributed to  your repo
-# Hey, I am Jaydev   
+
+# well it's nice to  know  you brother
 # Import necessary libraries
 import google.generativeai as genai  # Google's Gemini AI SDK
 import pyttsx3  # Text-to-Speech conversion
