@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game with Mentor</title>
+    <style>
+        body {
+            background: black;
+            margin: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            align-items: center;
+            justify-content: center;
+            width: 2320;
+            height: 1080;
+        }
+
+        /* Mentor Chat Styles */
+        .mentor-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 15px;
+            padding: 15px;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .mentor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mentor-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .mentor-chat {
+            height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #4CAF50 rgba(255, 255, 255, 0.1);
+        }
+
+        .mentor-chat::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .mentor-chat::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .mentor-chat::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 3px;
+        }
+
+        .mentor-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            resize: none;
+            height: 45px;
+            font-family: Arial, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .mentor-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+        }
+
+        .mentor-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mentor-message {
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: rgba(0, 123, 255, 0.2);
+            text-align: right;
+            margin-left: 20%;
+            border: 1px solid rgba(0, 123, 255, 0.3);
+        }
+
+        .mentor-response {
+            background: rgba(40, 167, 69, 0.2);
+            margin-right: 20%;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+
+    <!-- Mentor Chat Interface -->
+    <div class="mentor-container">
+        <div class="mentor-header">
+            <div class="mentor-title">C++ Mentor</div>
+        </div>
+        <div class="mentor-chat" id="mentorChat"></div>
+        <input type="text" class="mentor-input" id="mentorInput" placeholder="Ask me anything about C++..." onkeypress="handleMentorInput(event)">
+    </div>
+
+    <!-- Existing Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.1/gsap.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/data/collisions.js"></script>
+    <script src="js/classes/CollisionBlock.js"></script>
+    <script src="js/classes/Sprite.js"></script>
+    <script src="js/classes/Player.js"></script>
+    <script src="js/classes/player2.js"></script>
+    <script src="js/classes/classes.js"></script>
+    <script src="js/eventListeners.js"></script>
+    <script src="index.js"></script>
+    <script src="js2/classses.js"></script>
+
+    <!-- Mentor Chat Script -->
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let isMentorVisible = true;
+
+        function toggleMentor() {
+            const mentorContainer = document.querySelector('.mentor-container');
+            isMentorVisible = !isMentorVisible;
+            mentorContainer.style.display = isMentorVisible ? 'block' : 'none';
+        }
+
+        async function handleMentorInput(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                const input = document.getElementById('mentorInput');
+                let message = input.value.trim();
+                
+                if (message) {
+                    // Add 'user:' prefix if not already present
+                    if (!message.startsWith('user:')) {
+                        message = 'user: ' + message;
+                    }
+                    
+                    // Add user message to chat (without the 'user:' prefix in display)
+                    addMessageToChat('user', message.replace('user:', '').trim());
+                    
+                    try {
+                        const response = await fetch(`${API_URL}/api/mentor`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ message: message })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.error) {
+                            addMessageToChat('mentor', `Error: ${data.error}`);
+                        } else {
+                            // Remove 'user:' prefix from the response if present
+                            const cleanResponse = data.response.replace(/^user:\s*/i, '');
+                            addMessageToChat('mentor', cleanResponse);
+                        }
+                    } catch (error) {
+                        addMessageToChat('mentor', `Error connecting to server: ${error.message}`);
+                    }
+
+                    input.value = '';
+                }
+            }
+        }
+
+        function addMessageToChat(type, content) {
+            const chat = document.getElementById('mentorChat');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mentor-message ${type}-message`;
+            
+            // Format the message content
+            if (type === 'mentor') {
+                // Preserve line breaks and add emoji support
+                messageDiv.innerHTML = content
+                    .replace(/\n/g, '<br>')
+                    .replace(/:\)/g, '😊')
+                    .replace(/:\(/g, '😢')
+                    .replace(/:D/g, '😄')
+                    .replace(/<3/g, '❤️');
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Add event listener for input focus
+        document.getElementById('mentorInput').addEventListener('focus', function() {
+            this.style.height = '60px';
+        });
+
+        document.getElementById('mentorInput').addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                this.style.height = '45px';
+            }
+        });
+
+        // Add welcome message
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                addMessageToChat('mentor', '🌟 Ready to dive into the world of C++? 🚀 What would you like to learn today?');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
